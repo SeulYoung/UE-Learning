@@ -379,17 +379,44 @@
 
 ### 复制子对象
 
+- 虚幻引擎（UE） 中的 复制子对象（Replicated Subobjects） 可用于复制从UObject派生的类及其包含的复制属性。
 
+- 注册子对象列表概述
+  - Actor现在有方法将子对象注册到所属Actor或Actor组件上的列表，并由Actor通道自动处理这些注册子对象的复制工作。
+  - 注册子对象列表允许在注册子对象时为其指定 ELifetimeCondition。该过程可更好地控制何时将子对象复制到何处，而无需用户在 ReplicateSubobjects 中实现此逻辑。
 
+- 使用注册子对象列表
+  - 操作说明
+    - 1.为你的Actor类设置属性 bReplicateUsingRegisteredSubObjectList = true 。
+    - 2.在 ReadyForReplication、BeginPlay 中或在创建新的子对象时调用 AddReplicatedSubObject 。
+      - 在Actor组件类中使用复制子对象时要记住几点。在Actor组件类中，ReadyForReplication 在 InitComponent 和 BeginPlay 之间调用。这里注册组件后，该组件就可以在组件的 BeginPlay 中及早调用远程程序调用（RPC）。
+    - 3.每当你修改或删除子对象时，请调用 RemoveReplicatedSubObject 。
+      - 这最后一步非常重要。除非删除引用，否则列表仍包含指向已更改或标记为破坏的子对象的原始指针。因此，这会在对象被垃圾回收之后导致崩溃。
 
+- 复制Actor组件
+  - 使用此系统的 复制Actor组件（Replicated Actor Components） 的处理方式与上面相同，因为它们也是复制子对象。
+  - 要为Actor组件设置复制条件，所属Actor类必须实现 AllowActorComponentToReplicate 并返回特定组件所需的 ELifetimeCondition 。可以调用 SetReplicatedComponentNetCondition ，在 BeginPlay 之后直接更改组件的条件。
+  - 确保 AllowActorComponentToReplicate 返回新条件；否则，如果对Actor调用了 UpdateAllReplicatedComponents ，将重置该条件。
 
+- 复杂复制条件
+  - 复制子对象系统支持为子对象创建自定义复制条件。这通过 NetConditionGroupManager 和 COND_NetGroup 来完成。子对象和玩家控制器可以同时属于多个组。在这种情况下，主体在属于客户端的至少一个组时会复制到客户端。
 
+### Replication Graph
 
+- Replication Graph 插件是一个用于多人游戏的网络复制系统，它的设计可以很好地适应大量玩家和复制Actor。标准的网络复制策略（要求每个复制的Actor决定是否应该向每个连接的客户端发送更新）在这种情况下表现很差，并且会限制服务器的CPU。像将Actor划分为交错的组，或者只是降低更新频率，这样的解决方案可能会缓解这个问题，但降低更新频率也会降低客户端体验。Replication Graph消除了Actor单独评估每个连接的客户端的需要，同时在不牺牲客户端体验的情况下，解决了CPU性能问题。
 
+- 高级示例
+  - 对于具有大量连接客户端甚至更多同步Actor的游戏而言，根据不同节点的类型和状态分配Actor的Replication Graph可以节省大量CPU时间。这使得构建传统复制方法无法实现的游戏成为可能。
+  - 在概念层面上，这种规模的游戏可以构建具有以下功能的Replication Graph和Replication Graph节点，以处理数量庞大的复制Actor和连接客户端：
+    - 根据位置将Actor分组。
+    - 确定"休眠"放置的Actor，并将它们放在单独的列表中。
+    - 如果你游戏中的角色 能够拾取并携带物品，随物品的携带者一起更新这些物品。
+    - 制定所有客户端始终已知的特殊Actor的列表。
+    - 制定始终（或从不）与特定客户端相关的特殊Actor的列表。
 
+## Iris复制系统
 
-
-
-
-
-
+- Iris 是一种选择加入的复制系统，可与虚幻引擎的现有复制系统一起配合使用。以创建支持以下内容的复制系统：
+  - 规模更大、互动性更好的世界。
+  - 更多的玩家人数。
+  - 更低的服务器开销。
