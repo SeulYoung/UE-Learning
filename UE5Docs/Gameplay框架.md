@@ -162,6 +162,58 @@
   - 保持你的项目代码库的清洁且可读。
   - 避免不相关的功能之间意外交互或依赖。在开发那些需要经常改动功能的已上线产品时，这尤为重要。
 
+- Game Feature Actions
+  - 添加组件（Add Components），这是使用游戏功能和模块化Gameplay插件的最常见方式，因为组件非常适合用来封装各种类型的行为。
+    - "添加组件"操作会遍历Actor和组件对，并尝试将每个组件的一个实例添加到配对的Actor中。你可以指定在客户端还是服务器上添加组件，还是两者都添加；默认情况下，客户端和服务器都会添加组件。
+    - 为了保证你的功能完全封装在插件中，你添加的组件将来自插件自身，而Actor类将是内置的引擎类，例如 Pawn 或项目中继承自引擎类的子类，例如常见的 MyPawn 。组件应该能处理与你的功能相关的所有程序逻辑和数据存储。
+    - 当你能最大程度降低与项目的Actor子类所需的交互保持在最低限度时，在别的项目中实现你设计的功能就会比较容易。
+    - 要接收"添加组件"操作中的组件，你的Actor必须使用 UGameFrameworkComponentManager 单例注册，并将自身传入 AddReceiver 函数。这步通常在 BeginPlay 中完成。代码如下：
+    ```cpp
+      if (UGameFrameworkComponentManager* ComponentManager = GetGameInstance()->GetSubsystem<UGameFrameworkComponentManager>())
+      {
+          ComponentManager->AddReceiver(this);
+      }
+    ```
+
+### Game Framework Component Manager
+
+- 游戏框架组件管理器（Game Framework Component Manager） 是 模块化Gameplay插件（Modular Gameplay plugin） 中的一个 游戏实例子系统（Game Instance Subsystem） 。它可以与 游戏功能插件（Game Feature Plugins） 一起使用。 该子系统中实现的函数可以由 游戏功能操作（Game Feature Actions） 用于支持可扩展性。 游戏功能操作由一般Gameplay代码用于协调不同Gameplay对象之间的通信。管理器实现两个基本系统：扩展处理程序（Extension Handlers） 和 初始化状态（Initialization States） 。
+
+- Extension Handler System
+  - 扩展处理程序系统允许在激活游戏功能时修改游戏对象。此系统有两个部分：Actor 充当注册以扩展的 接收器（Receivers） ，扩展处理程序（Extension Handlers） 是为响应事件而触发的委托。这些事件包括处理新的接收器、删除现有接收器，以及Gameplay代码调用的任意事件。
+
+- Receivers and Extension Handlers
+  - 要正确注册为接收器，Actor应当从 PreInitializeComponents 方法调用 AddGameFrameworkComponentReceiver 函数，并从 EndPlay 方法调用 RemoveGameFrameworkComponentReceiver 函数。这可确保它在正常组件初始化过程中注册为接收器，并在删除或禁用Actor时注销。
+  - 接收器可以调用 SendGameFrameworkComponentExtensionEvent 函数以发送任意事件。不同于下面所述的初始化状态系统，这些扩展事件是无状态的，只会修改当前处于活动状态的处理程序。 要正确注册扩展处理程序，GameFeatureAction_AddComponents 等类可以调用 AddExtensionHandler 来注册手动委托，或调用 AddComponentRequest 以调用包装器函数，后者将自动添加所需组件。
+  - 在两种情况下，添加函数返回的句柄都需要像数组一样存储，因为委托保持注册状态的前提是存在对返回的句柄结构体的实时共享指针引用。
+
+- Initialization State System
+  - 初始化状态系统（初始状态（Init State））提供了相应函数，用于跟踪附加到游戏世界中Actor的不同功能（通常由组件实现）的初始化和一般生命周期。该系统不用作通用Gameplay状态机，因为状态是为整个游戏全局定义的，并且从创建到完全初始化进行线性排列。
+  - 在Actor上同步组件初始化是复杂的过程，尤其是在涉及网络复制的情况下。该系统提供了注册和通知函数，有助于简化协调工作。低级别函数由游戏框架组件管理器实现，有一个可选的原生GameFrameworkInitStateInterface，它可以由实现指定功能的组件（或其他Gameplay对象）继承。
+
+- Actor Features
+- 在该系统注册的Actor将有多个 Actor功能 ，这些功能定义为唯一的 名称 。这些名称由游戏定义，并且可以对应于原生类名或功能特性。 该子系统将跟踪为Actor注册的所有功能的 初始状态（Init State） 和实现程序对象（通常是一个组件）。对于实现 GameFrameworkInitStateInterface 的对象，功能名称由 GetFeatureName 接口函数返回，并用于其他所有操作。
+
+- Init States
+  - 初始状态（Init States） 实现为Gameplay标签，必须在游戏实例初始化期间通过调用 RegisterInitState 向子系统注册。这些状态按顺序注册，共享给游戏中的所有Actor。例如，一个游戏可以支持使用 InitState.Spawning 和 InitState.Ready 的简单双状态系统，也可以使用更复杂的系统。
+
+- Reporting and Querying States
+  - 向此系统注册的所有功能都需要在每次更改初始状态时向游戏框架组件管理器报告，因为管理器会存储该状态，供以后查询。管理器不会对状态更改强制实施限制，而是具备灵活性。
+  - GameFrameworkInitStateInterface 为简单的C++状态机提供了框架，通过覆盖几个函数，即可快速实现该状态机：
+    - CanChangeInitState 该函数应该覆盖以在允许请求的状态过渡时返回true。你会在这里实施检查，了解必需的数据是否可用。
+    - HandleChangeInitState 该函数应该覆盖以执行在特定状态过渡时应发生的特定于对象的更改。
+    - CheckDefaultInitialization 可以覆盖以尝试遵循功能的默认初始化路径。如果使用初始状态数组调用 ContinueInitStateChain 函数，它将调用 CanChangeInitState 和 HandleChangeInitState 以到达状态链中尽可能远的地方。 该函数应从可能推进初始化的 OnRep 函数等地方调用。
+  - 此外，该子系统和接口提供了注册和查询函数：
+    - RegisterInitStateFeature 向系统注册，但不设置状态，这很适合从组件 OnRegister 调用。
+    - UnregisterInitStateFeature 这通常应该从 EndPlay 调用，以从系统注销并取消绑定通知委托。
+    - HasReachedInitState 可以调用该函数以查看功能是否已达到指定状态或初始化顺序中的稍后状态。
+    - HaveAllFeaturesReachedInitState 对管理器调用该函数可查看是否所有功能都已达到特定状态。这很适合用于协调扩展，因为你可以设置一个中央功能，使其等待其他所有功能就绪，然后再过渡到下一个状态。
+
+- Registering For State Changes
+  - 该系统最有用的部分是，可以注册初始状态更改并在达到特定状态后调用委托。RegisterAndCallForActorInitState 等注册函数会在功能达到特定状态时调用指定委托，如果该功能已经达到该状态，则会立即调用委托。
+  - 你可以使用类名调用 RegisterAndCallForClassInitState 来侦听是否有功能达到该状态，这很适合用于侦听全局初始化。你可以从C++代码或蓝图调用这些函数，接口上的版本会填充功能名称。委托执行逻辑旨在处理连续发生的多个状态过渡，并且将调用所有相关委托。
+  - 为方便使用，BindOnActorInitStateChanged 和 OnActorInitStateChanged 可以用于接口，以快速侦听对同一个Actor的其他功能的更改。然后，可将其用于调用 CheckDefaultInitialization 等函数，从而推进功能初始状态。
+
 ## Game Mode 和 Game State
 
 - 即使最开放的游戏也拥有基础规则，而这些规则构成了 Game Mode。
