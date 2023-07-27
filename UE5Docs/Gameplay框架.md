@@ -168,6 +168,7 @@
     - 为了保证你的功能完全封装在插件中，你添加的组件将来自插件自身，而Actor类将是内置的引擎类，例如 Pawn 或项目中继承自引擎类的子类，例如常见的 MyPawn 。组件应该能处理与你的功能相关的所有程序逻辑和数据存储。
     - 当你能最大程度降低与项目的Actor子类所需的交互保持在最低限度时，在别的项目中实现你设计的功能就会比较容易。
     - 要接收"添加组件"操作中的组件，你的Actor必须使用 UGameFrameworkComponentManager 单例注册，并将自身传入 AddReceiver 函数。这步通常在 BeginPlay 中完成。代码如下：
+
     ```cpp
       if (UGameFrameworkComponentManager* ComponentManager = GetGameInstance()->GetSubsystem<UGameFrameworkComponentManager>())
       {
@@ -217,7 +218,7 @@
 ## Game Mode 和 Game State
 
 - 即使最开放的游戏也拥有基础规则，而这些规则构成了 Game Mode。
-- 基于规则的事件在游戏中发生，需要进行追踪并和所有玩家共享时，信息将通过 Game State 进行存储和同步。
+  - 基于规则的事件在游戏中发生，需要进行追踪并和所有玩家共享时，信息将通过 Game State 进行存储和同步。
 
 - AGameModeBase
   - 所有 Game Mode 均为 AGameModeBase 的子类。而 AGameModeBase 包含大量可覆盖的基础功能。
