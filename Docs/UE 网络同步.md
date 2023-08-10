@@ -102,13 +102,13 @@ flowchart TB
 
 ## Reliability and Retransmission
 
-- When a NetConnection is established, it will establish a Sequence Number for its packets and bunches. These can either be fixed, or randomized (when randomized, the sequence will be sent by the server).
-- The packet number is per NetConnection, incremented for every packet sent, every packet will include its packet number, and we will never retransmit a packet with the same packet number.
-- The bunch number is per Channel, incremented for every **reliable** bunch sent, and every **reliable** bunch will include its bunch number. Unlike packets, though, exact (reliable) bunches may be retransmitted. This means we will resend bunches with the same bunch number.
+- 当建立 NetConnection 时，其将为它所对应的 Packets 和 Bunches 建立一个序列号。序列号可以是固定的，也可以是随机的（随机时，序列号将由服务器发送）。
+- Packet 编号为每个 NetConnection 独立的编号，每发送一个 Packet 就会递增编号，每个 Packet 都会包含其数据包编号，UE绝不会多次发送具有相同编号的 Packet。
+- Bunche 编号是按 Channel 计算的，每发送一个**可靠**的 Bunche 编号就会递增一次，每个**可靠**的 Bunche 都会包含其对应的编号。但与 Packet 不同的是，可靠的 Bunche 可以重传。这意味着可能会重新发送具有相同编号的 Bunche。
 
 ### Detecting Incoming Dropped Packets
 
-- By assigning packet numbers, we can easily detect when incoming packets are lost. This is done simply by taking the difference between the last successfully received packet number, and thepacket number of the current packet being processed.
+- 通过分配 Packet 编号，我们可以轻松检测接收到的数据包何时丢失。方法很简单，只需计算最后一次成功接收的 Packet 编号与当前正在处理的 Packet 编号之间的差值即可。
 
 ```mermaid
 ---
@@ -122,26 +122,26 @@ flowchart TB
     %% Remember, the engine will not reuse sequence numbers
 ```
 
-- In either case, the engine will typically ignore the missing or invalid packets, and will not send ACKs for them.
-- We do have methods for "fixing" out of order packets that are received on the same frame.
-  - When enabled, if we detect missing packets (difference > 1), we won't process the current packet immediately.
-  - Instead, it will add it to a queue. The next time we receive a packet successfully (difference == 1), we will see if the head of our queue is properly ordered. If so, we will process it, otherwise we will continue receiving packets.
+- 在上述这两种情况下，引擎通常会忽略丢失或无效的 Packet，也不会发送 ACK。
+- UE也确实有办法"修复"在同一帧上接收到的顺序不对的 Packet。
+  - 启用后，如果检测到 Packet 丢失（差值 > 1），UE不会立即处理当前数据包。
+  - 相反，它会将其添加到一个队列中。下一次成功接收 Packet 时（差值 == 1），将查看队列的头部是否排序正确。如果是，将处理它，否则将继续接收数据包。
 
 ### Detecting Outgoing Dropped Packets
 
-- As mentioned above, whenever a packet is received successfully the recipient will send back an ACK. These ACKs will contain the packet numbers of successfully received packets, in sequence order.
-- When ACKs are being processed, any ACK below our last received ACK is ignored and any gaps in packet numbers are considered Not Acknowledged (NAKed).
-- It is the sender's responsibility to handle these ACKs and NAKs and resend any missing data.
-  - The new data will be added to new outgoing packets (again, we will not resend packets we've already sent, or reuse packet sequence numbers).
+- 如上所述，每当成功接收一个 Packet，接收方都会发回一个 ACK。这些 ACK 将按顺序包含成功接收到的 Packet 的编号。
+- 在处理 ACK 时，将忽略上次收到的 ACK 之前的任何 ACK，然而 Packet 编号中的任何间隙都会被视为未确认（NAK）。
+- 发送方有责任处理这些 ACK 和 NAK，并重新发送任何丢失的数据。
+  - 新数据将添加到新发出的 Packet 中（牢记，UE不会重新发送已发送的 Packet，也不会重复使用 Packet 序列号）。
 
 ### Resending Missing Data
 
-- As mentioned above, packets alone don't contain useful game data. Instead, it's the bunches that comprise them that have meaningful data.
-- Bunches can either be marked as Reliable or Unreliable.
-  - The engine will make no attempt at resending unreliable bunches if they are dropped.
-  - However, the engine will attempt to resend reliable bunches. Whenever a reliable bunch is sent, it will be added to a list of un-ACKed reliable bunches.
-  - If we receive a NAK for a packet that contained the bunch, the engine will retransmit an exact copy of that bunch.
-  - Note, because bunches may be partial, dropping even a single partial bunch will result in retransmission of the entire bunch. When all packets containing a bunch have been ACKed, we will remove it from the list.
-- Similar to packets, we will compare the bunch number for received reliable bunches to the last successfully received bunch. If we detect that the difference is negative, we simply ignore the bunch.
-  - If the difference is greater than one, we will assume we missed a bunch. Unlike packet handling, we will not discard this data.
-  - Instead, we will queue the bunch and pause processing of **any** bunches, reliable or unreliable. Processing will not be resumed until we detect have received the missing bunches, at which point we will process them, and then start processing our queued bunches.
+- 如上所述，Packet 本身并不包含有用的游戏数据。相反，由 Bunche 组成的群组才是有意义的数据。
+- Bunche 可以标记为可靠或不可靠。
+  - 如果不可靠的 Bunche 被丢弃，引擎将不会尝试重新发送。
+  - 但是，引擎会尝试重新发送可靠的 Bunche。每当发送一个可靠的 Bunche 时，它就会被添加到一个 un-ACKed 的可靠 Bunche 列表中。
+  - 如果收到包含 Bunche 的 Packet 的 NAK，引擎将重新发送该 Bunche 的副本。
+  - 需要注意的是，由于 Bunche 可能是分组发送的，因此即使只丢失了一个部分的 Bunche 也会导致重新传输整个 Bunche。当包含一个 Bunche 的所有 Packet 都被 ACK 后，将把它从列表中删除。
+- 与 Packet 类似，UE会将收到的可靠 Bunche 的编号与最后一次成功接收的编号进行比较。如果检测到差值为负，就直接忽略该 Bunche。
+  - 如果差值大于 1，就认为漏掉了一个 Bunche。与 Packet 处理不同，不会丢弃这些数据。
+  - 相反，UE会将现在起收到 Bunche 统统记录起来，并暂停处理**任何** Bunches，无论是否是可靠的 Bunche。直到检测到成功接收遗漏的 Bunche，才会恢复处理，此时将首先处理这些 Bunche，然后开始处理之前记录的其他 Bunches。
