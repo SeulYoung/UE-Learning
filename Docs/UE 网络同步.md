@@ -16,7 +16,7 @@
 title: Startup
 ---
 flowchart TB
-    S(Server) --> EL[UEngine::LoadMap] --> WL[UWorld::Listen] --> CMT1[create the main Game Net Driver, parse out settings] --> DI[UNetDriver::InitListen]
+    S(Server) --> EL[UEngine::LoadMap] --> WL[UWorld::Listen] --> CMT1[Create the main Game Net Driver, parse out settings] --> DI[UNetDriver::InitListen]
     %% For example, in IpNetDriver, that is where we determine the IP / Port we will bind to by calls to our configured Socket Subsystem (see ISocketSubsystem::GetLocalBindAddresses and ISocketSubsystem::BindNextPort).
 
     C(Client) --> EB[UEngine::Browse] --> PN[Establish a new UPendingNetGame with the server's IP] --> PI[UPendingNetGame::Initialize] --> PID[UPendingNetGame::InitNetDriver] --> NC[Setup a UNetConnection for the server]
@@ -115,7 +115,7 @@ flowchart TB
 title: Detecting Incoming Dropped Packets
 ---
 flowchart TB
-    S(Receive a packet) --> CMT1[Receive a packet] -->
+    S(Receive a packet) --> CMT1[Calculate the difference between Packets] -->
     CD1{Difference?} -->|== 1| G[Under good conditions] --> G1[Use its packet number send ACKs]
     CD1 -->|> 1| B1[Missed some packets] --> CMT2[Assume the missing packets were dropped] --> CMT3[Consider the current packet to have been successfully received, and use its number going forward]
     CD1 -->|<= 0| B2[Received some packets out of order, or an external service is trying to resend data to us]
