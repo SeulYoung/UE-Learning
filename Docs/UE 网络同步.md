@@ -2,9 +2,10 @@
 
 ## NetDrivers, NetConnections, and Channels
 
-- UNetDrivers 负责管理 UNetConnections 以及可在它们之间共享的数据。
+- UNetDrivers 负责管理 UNetConnections 以及可在它们之间共享的数据，网络同步的发起点可以说就是 UNetDriver。
 - NetConnections 代表连接到游戏（或更广泛地说，连接到 NetDriver）的单个客户端。
 - 最终的数据不直接由 NetConnections 处理。相反，NetConnections 会将数据路由至 Channels。每个 NetConnection 都有自己的 Channels。
+- 要同步的Actor都会创建对应的 UActorChannel，因此一个 Actor 如果要在所有 NetConnections 同步，那么每个 NetConnection 都会为其创建一个 UActorChannel。
 - 在正常情况下，只有一个 NetDriver（在客户端和服务器都会创建）用于"标准"游戏流量和连接。
 - UIpNetDriver 和 UIpConnection（或派生类）是几乎所有平台的引擎默认使用的方式。
 - 服务器和客户端都拥有自己的 NetDriver，UE 所有的游戏流量都将由 IpNetDriver 发送或接收。
