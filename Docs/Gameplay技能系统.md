@@ -113,3 +113,67 @@
     - There is a chance that the server rejects the ability activation, which means it must undo the changes the ability made locally. You can handle these cases using locally predicted abilities. To help support this, some Gameplay Effects support rollback if the ability that granted them gets rejected by the server. These include most non-instant GEs, but notably excludes things like damage and other instantaneous attribute/tag changes.
   - Using Abilities to Interact With Server-Owned Objects
     - Gameplay Abilities can handle interactions with bots, NPCs, and other server-owned Actors and objects. You have to do this through a locally owned Actor – usually the player's Pawn – and a replicated ability or another non-GAS mechanism that calls a server function. This replicates the interaction to the server, which then has authority to perform changes with the NPCs.
+
+
+# GAS Documentation
+
+## 4.1 Ability System Component
+
+- 当你想遍历ActivatableAbility.Items时, 确保在循环体之上添加ABILITYLIST_SCOPE_LOCK();来锁定列表以防其改变(比如移除一个Ability)
+
+## 4.2 Gameplay Tags
+
+- 如果GameplayTag由GameplayEffect添加, 那么其就是可同步的. ASC允许你添加不可同步的LooseGameplayTag且必须手动管理. 样例项目对State.Dead使用了LooseGameplayTag, 因此当生命值降为0时, 其所属客户端会立即响应. 重生时需要手动将TagMapCount设置回0, 当使用LooseGameplayTag时只能手动调整TagMapCount, 相比纯手动调整TagMapCount, 最好使用UAbilitySystemComponent::AddLooseGameplayTag()和UAbilitySystemComponent::RemoveLooseGameplayTag()
+
+## 4.3 Attribute
+
+- 一些Attribute被视为占位符, 其是用于预计和Attribute交互的临时值, 这些Attribute被叫做Meta Attribute. Meta Attribute对于在"我们应该造成多少伤害?"和"我们该如何处理伤害值?"这种问题之中的伤害值和治疗值做了很好的解构, 这种解构意味着GameplayEffect和ExecutionCalculation无需了解目标是如何处理伤害值的
+
+## 4.4 AttributeSet
+
+- Attribute添加到GetLifetimeReplicatedProps中应使用REPTNOTIFY_Always，是用于设置OnRep函数在客户端值已经与服务端同步的值相同的情况下触发(因为有预测), 默认设置下, 客户端值与服务端同步的值相同时, OnRep函数是不会触发的
+
+## 4.5 Gameplay Effects
+
+- 在Gameplay Effect Modifiers中，预测(Prediction)对于百分比修改有些问题
+- 每个Modifier都可以设置SourceTag和TargetTag, 它们的作用就像GameplayEffect的Application Tag requirements, 因此只有当Effect应用后才会考虑标签, 对于周期性(Periodic)的无限(Infinite)Effect, 这些标签只会在第一次应用Effect时才会被考虑, 而不是在每次周期执行时
+- ExecutionCalculation只能由即刻(Instant)和周期性(Periodic)GameplayEffect使用, 对于Local Predicted, Server Only和Server Initiated的GameplayAbility, ExecCalc只在服务端调用
+  - 发送数据到Execution Calculation的几种方式
+    1. SetByCaller
+    1. Backing Data Attribute Calculation Modifier
+    1. Backing Data Temporary Variable Calculation Modifier(添加Backing临时变量到ExecutionCalculation的构造函数: ValidTransientAggregatorIdentifiers.AddTag(FGameplayTag::RequestGameplayTag("Data.Damage"));)
+    1. GameplayEffectContext
+- 当GameplayEffectSpec创建时, Snapshot会捕获Attribute, 而当GameplayEffectSpec应用时, 非Snapshot会捕获Attribute. 捕获Attribute会自ASC现有的Modifier重新计算它们的CurrentValue, 该重新计算不会执行AbilitySet中的PreAttributeChange(), 因此所有的限制操作(Clamp)必须在这里重新处理
+- CustomApplicationRequirement(CAR)类为设计师提供对于GameplayEffect是否可以应用的高阶控制, 而不是对GameplayEffect进行简单的GameplayTag检查. 这可以通过在蓝图中重写CanApplyGameplayEffect()和在C++中重写CanApplyGameplayEffect_Implementation()实现.
+
+## 4.6 Gameplay Abilities
+
+- 传递数据到Ability的方式
+  - Activate GameplayAbility by Event
+  - Use WaitGameplayEvent AbilityTask(该方法的缺点是Event不能通过AbilityTask同步且只能用于Local Only和Server Only的GameplayAbility. 你可以编写自己的AbilityTask以支持同步Event负载(Payload))
+  - Use TargetData
+  - Store Data on the OwnerActor or AvatarActor(这种方法最灵活且可以用于由输入绑定激活的GameplayAbility, 然而, 它不能保证在使用时数据同步)
+- Ability Batching
+  - 一般GameplayAbility的生命周期最少涉及2到3个自客户端到服务端的RPC
+  - 如果GameplayAbility在一帧同一原子(Atomic)组中执行这些操作, 我们就可以优化该工作流, 将所有2个或3个RPC批处理(整合)为1个RPC
+- GameplayAbility的网络安全策略(Net Security Policy)决定了Ability应该在网络的何处执行. 它为尝试执行限制Ability的客户端提供了保护.
+
+## 4.7 Ability Tasks
+
+- UAbilityTask的构造函数中强制硬编码允许最多1000个同时运行的AbilityTask, 当设计那些同时拥有数百个Character的游戏(像RTS)的GameplayAbility时要注意这一点.
+- 在蓝图中, 我们只需使用为AbilityTask创建的蓝图节点, 不必调用ReadyForActivate(), 其由Engine/Source/Editor/GameplayTasksEditor/Private/K2Node_LatentGameplayTaskCall.cpp自动调用, K2Node_LatentGameplayTaskCall也会自动调用BeginSpawningActor()和FinishSpawningActor()
+- 强调一遍, K2Node_LatentGameplayTaskCall只会对蓝图做这些自动操作, 在C++中, 我们必须手动调用ReadyForActivation(), BeginSpawningActor()和FinishSpawningActor()
+- Root Motion Source Ability Task
+  - GAS自带的AbilityTask可以使用挂载在CharacterMovementComponent中的Root Motion Source随时间推移而移动Character, 像击退, 复杂跳跃, 吸引和猛冲
+
+## 4.8 Gameplay Cues
+
+- GameplayCue(GC)执行非游戏逻辑相关的功能, 像音效, 粒子效果, 镜头抖动等等. GameplayCue一般是可同步(除非在客户端明确执行(Executed), 添加(Added)和移除(Removed))和可预测的
+- 从GameplayAbility和ASC中暴露的用于触发GameplayCue的函数默认是可同步的. 每个GameplayCue事件都是一个多播(Multicast)RPC. 这会导致大量RPC. GAS也强制在每次网络更新中最多能有两个相同的GameplayCueRPC. 我们可以通过使用客户端GameplayCue来避免这个问题. 客户端GameplayCue只能在单独的客户端上Execute, Add或Remove
+- 默认情况下, 游戏开始时GameplayCueManager会扫描游戏的全部目录以寻找GameplayCueNotify并将其加载进内存, 在启动时异步加载每个GameplayCue的一种可选方法是只异步加载那些会在游戏中触发的GameplayCue, 这会在异步加载每个GameplayCue时减少不必要的内存占用和潜在的游戏无响应几率, 从而避免特定GameplayCue在游戏中第一次触发时可能出现的延迟效果
+
+- 手动RPC: 每次GameplayCue触发都是一次不可靠的多播(NetMulticast)RPC. 在同一时刻触发多个GameplayCue的情况下, 有一些优化方法来将它们压缩成一个RPC或者通过发送更少的数据来节省带宽
+  - 假设你有一个可以发射8枚弹丸的霰弹枪, 就会有8个轨迹和碰撞GameplayCue. GASShooter采用将它们联合成一个RPC的延迟(Lazy)方法, 其将所有的轨迹信息保存到EffectContext作为TargetData
+  - 尽管其将RPC数量从8降为1, 然而还是在这一个RPC中通过网络发送大量数据(~500 bytes). 一个进一步优化的方法是使用一个自定义结构体发送RPC, 在该自定义RPC中你需要高效编码命中位置(Hit Location)或者给一个随机种子以在接收端重现/近似计算碰撞位置, 客户端之后需要解包该自定义结构体并重现客户端执行的GameplayCue
+- GameplayEffect中的多个GameplayCue:
+  - 默认情况下, UGameplayCueManager::InvokeGameplayCueAddedAndWhileActive_FromSpec()会在不可靠的多播(NetMulticast)RPC中发送整个GameplayEffectSpec(除了转换为FGameplayEffectSpecForRPC)而不管ASC的同步模式, 取决于GameplayEffectSpec的内容, 这可能会使用大量带宽, 我们可以通过设置AbilitySystem.AlwaysConvertGESpecToGCParams 1来将其优化, 这会将GameplayEffectSpec转换为FGameplayCueParameter结构体并且RPC它而不是整个FGameplayEffectSpecForRPC, 这会节省带宽但是只有较少的信息
