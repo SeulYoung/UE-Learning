@@ -9,8 +9,11 @@
 
 ## Network Replication
 
+1. [《Exploring in UE4》网络同步原理深入](https://zhuanlan.zhihu.com/p/34723199)
 1. [UE4网络同步详解](https://zhuanlan.zhihu.com/p/533754693)
 1. [Unreal Engine Multiplayer Tips and Tricks](https://wizardcell.com/unreal/multiplayer-tips-and-tricks/)
+1. [Replication Graph 从入门到入土](https://bokjan.com/2022/10/unreal-replication-graph.html)
+1. [UE4属性同步](https://zhuanlan.zhihu.com/p/412517987)
 
 ## Gameplay
 
@@ -35,7 +38,15 @@
 1. [C++ Reference](https://stackoverflow.com/tags/c%2b%2b-faq/info)
 1. [What are Aggregates and PODs and how/why are they special?](https://stackoverflow.com/questions/4178175/what-are-aggregates-and-pods-and-how-why-are-they-special)
 
+## UMG
+
+1. [Unreal Engine UI tutorials](https://benui.ca/)
+1. [【UE4】UMG 快速入门与基础实战](https://www.cnblogs.com/sin998/p/15377278.html)
+
 ## 其他
 
+1. [UE4 GameThread优化总结笔记](https://zhuanlan.zhihu.com/p/388070138)
+1. [UE4 DS服务器性能优化](https://zhuanlan.zhihu.com/p/511211805)
+1. [UE4中Navmesh动态更新方案及优化](https://zhuanlan.zhihu.com/p/566846141)
 1. [MMORPG大世界服务器技术浅探(1)——服务器框架](https://zhuanlan.zhihu.com/p/266573590)
-1. [如何形象地理解四元数？](https://www.zhihu.com/question/23005815)
+1. [如何形象地理解四元数](https://www.zhihu.com/question/23005815)
