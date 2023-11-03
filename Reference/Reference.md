@@ -14,6 +14,7 @@
 1. [Unreal Engine Multiplayer Tips and Tricks](https://wizardcell.com/unreal/multiplayer-tips-and-tricks/)
 1. [Replication Graph 从入门到入土](https://bokjan.com/2022/10/unreal-replication-graph.html)
 1. [UE4属性同步](https://zhuanlan.zhihu.com/p/412517987)
+1. [REPLICATING UOBJECTS](https://jambax.co.uk/replicating-uobjects/)
 
 ## Gameplay
 
@@ -50,3 +51,5 @@
 1. [UE4中Navmesh动态更新方案及优化](https://zhuanlan.zhihu.com/p/566846141)
 1. [MMORPG大世界服务器技术浅探(1)——服务器框架](https://zhuanlan.zhihu.com/p/266573590)
 1. [如何形象地理解四元数](https://www.zhihu.com/question/23005815)
+
+1. [Game Development Essentials: Gameplay Mechanics（游戏开发精粹：游戏玩法机制](https://zhuanlan.zhihu.com/p/601229447)
