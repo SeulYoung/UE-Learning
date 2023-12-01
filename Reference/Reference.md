@@ -2,10 +2,12 @@
 
 ## Collection
 
+1. [Unreal Engine Essentials for Games](https://dev.epicgames.com/community/learning/courses/aJM/unreal-engine-essentials-for-games-onboarding-collection/PdGj/unreal-engine-essentials-for-games)
 1. [InsideUE5](https://www.zhihu.com/column/insideue4)
 1. [《InsideUE4》目录](https://zhuanlan.zhihu.com/p/22813908)
 1. [《Exploring in UE4》开篇](https://zhuanlan.zhihu.com/p/34256771)
 1. [UE4 Guide](https://ikrima.dev/ue4guide/)
+1. [Unreal Engine C++ Complete Guide](https://www.tomlooman.com/unreal-engine-cpp-guide/)
 
 ## Network Replication
 
