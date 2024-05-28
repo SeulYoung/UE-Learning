@@ -5,9 +5,13 @@ ALIASES_START = "Aliases.."
 MATCH_PATTERN = r'<tr class="row-[a-z]+">.+<span class="doc">(.+)</span></a></p></td>'
 
 EXCLUDE_CHECKS = ["modernize-use-trailing-return-type",
+                  "modernize-avoid-c-arrays",
                   "cppcoreguidelines-owning-memory",
                   "cppcoreguidelines-init-variables",
                   "cppcoreguidelines-avoid-non-const-global-variables",
+                  "cppcoreguidelines-pro-bounds-array-to-pointer-decay",
+                  "bugprone-easily-swappable-parameters"
+                  "readability-uppercase-literal-suffix"
                   "readability-identifier-length",
                   "readability-implicit-bool-conversion",
                   "readability-isolate-declaration",
@@ -15,6 +19,7 @@ EXCLUDE_CHECKS = ["modernize-use-trailing-return-type",
                   "llvmlibc-implementation-in-namespace",
                   "llvmlibc-callee-namespace",
                   "llvmlibc-inline-function-decl",
+                  "altera-id-dependent-backward-branch",
                   "altera-struct-pack-align",
                   "altera-unroll-loops",
                   "misc-non-private-member-variables-in-classes",
