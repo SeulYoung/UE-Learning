@@ -1,17 +1,20 @@
 import re
 
 FILE_NAME = "checks_list.html"
-ALIASES_START = "Aliases.."
+ALIASES_START = "Check aliases"
 MATCH_PATTERN = r'<tr class="row-[a-z]+">.+<span class="doc">(.+)</span></a></p></td>'
 
-EXCLUDE_CHECKS = ["modernize-use-trailing-return-type",
+EXCLUDE_CHECKS = ["abseil-*",
+                  "android-*",
+                  "boost-*",
+                  "modernize-use-trailing-return-type",
                   "modernize-avoid-c-arrays",
                   "cppcoreguidelines-owning-memory",
                   "cppcoreguidelines-init-variables",
                   "cppcoreguidelines-avoid-non-const-global-variables",
                   "cppcoreguidelines-pro-bounds-array-to-pointer-decay",
-                  "bugprone-easily-swappable-parameters"
-                  "readability-uppercase-literal-suffix"
+                  "bugprone-easily-swappable-parameters",
+                  "readability-uppercase-literal-suffix",
                   "readability-identifier-length",
                   "readability-implicit-bool-conversion",
                   "readability-isolate-declaration",
