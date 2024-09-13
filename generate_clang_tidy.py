@@ -7,6 +7,7 @@ MATCH_PATTERN = r'<tr class="row-[a-z]+">.+<span class="doc">(.+)</span></a></p>
 EXCLUDE_CHECKS = ["abseil-*",
                   "android-*",
                   "boost-*",
+                  "objc-*",
                   "modernize-use-trailing-return-type",
                   "modernize-avoid-c-arrays",
                   "cppcoreguidelines-owning-memory",
@@ -35,9 +36,9 @@ EXCLUDE_CHECKS = ["abseil-*",
 
 
 def generate_clion(checks):
-    output = "*\n"
+    output = "*,\n"
     for check in checks:
-        output += "-" + check + "\n"
+        output += "-" + check + ",\n"
 
     print(output)
 
