@@ -1,7 +1,7 @@
 import re
 
 FILE_NAME = "checks_list.html"
-ALIASES_START = "Check aliases"
+ALIASES_START = "check-aliases"
 MATCH_PATTERN = r'<tr class="row-[a-z]+">.+<span class="doc">(.+)</span></a></p></td>'
 
 EXCLUDE_CHECKS = ["abseil-*",
@@ -11,10 +11,12 @@ EXCLUDE_CHECKS = ["abseil-*",
                   "modernize-use-trailing-return-type",
                   "modernize-avoid-c-arrays",
                   "cppcoreguidelines-owning-memory",
+                  "cppcoreguidelines-avoid-do-while",
                   "cppcoreguidelines-init-variables",
                   "cppcoreguidelines-avoid-non-const-global-variables",
                   "cppcoreguidelines-pro-bounds-array-to-pointer-decay",
                   "bugprone-easily-swappable-parameters",
+                  "readability-function-cognitive-complexity",
                   "readability-uppercase-literal-suffix",
                   "readability-identifier-length",
                   "readability-implicit-bool-conversion",
@@ -22,7 +24,9 @@ EXCLUDE_CHECKS = ["abseil-*",
                   "readability-magic-numbers",
                   "llvmlibc-implementation-in-namespace",
                   "llvmlibc-callee-namespace",
+                  "llvm-namespace-comment",
                   "llvmlibc-inline-function-decl",
+                  "llvm-include-order",
                   "altera-id-dependent-backward-branch",
                   "altera-struct-pack-align",
                   "altera-unroll-loops",
@@ -32,13 +36,15 @@ EXCLUDE_CHECKS = ["abseil-*",
                   "misc-no-recursion",
                   "fuchsia-overloaded-operator",
                   "fuchsia-statically-constructed-objects",
+                  "fuchsia-default-arguments-declarations",
                   "fuchsia-default-arguments-calls"]
 
 
 def generate_clion(checks):
-    output = "*,\n"
+    output = "*"
     for check in checks:
-        output += "-" + check + ",\n"
+        output += ","
+        output += "-" + check
 
     print(output)
 
