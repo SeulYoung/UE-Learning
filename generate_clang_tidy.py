@@ -8,14 +8,19 @@ EXCLUDE_CHECKS = ["abseil-*",
                   "android-*",
                   "boost-*",
                   "objc-*",
+                  "cert-err33-c",
                   "modernize-use-trailing-return-type",
+                  "modernize-use-designated-initializers",
+                  "modernize-use-nodiscard",
                   "modernize-avoid-c-arrays",
                   "cppcoreguidelines-owning-memory",
                   "cppcoreguidelines-avoid-do-while",
                   "cppcoreguidelines-init-variables",
                   "cppcoreguidelines-avoid-non-const-global-variables",
                   "cppcoreguidelines-pro-bounds-array-to-pointer-decay",
+                  "cppcoreguidelines-avoid-const-or-ref-data-members",
                   "bugprone-easily-swappable-parameters",
+                  "readability-convert-member-functions-to-static", # Clion
                   "readability-function-cognitive-complexity",
                   "readability-uppercase-literal-suffix",
                   "readability-identifier-length",
@@ -46,7 +51,8 @@ def generate_clion(checks):
         output += ","
         output += "-" + check
 
-    print(output)
+    with open("output.txt", "w") as wf:
+        wf.write(output)
 
 
 def generate_rider(checks):
