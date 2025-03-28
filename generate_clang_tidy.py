@@ -20,6 +20,7 @@ EXCLUDE_CHECKS = ["abseil-*",
                   "cppcoreguidelines-pro-bounds-array-to-pointer-decay",
                   "cppcoreguidelines-pro-bounds-constant-array-index",
                   "cppcoreguidelines-avoid-const-or-ref-data-members",
+                  "cppcoreguidelines-pro-type-reinterpret-cast",
                   "bugprone-easily-swappable-parameters",
                   "readability-convert-member-functions-to-static", # Clion
                   "readability-function-cognitive-complexity",
